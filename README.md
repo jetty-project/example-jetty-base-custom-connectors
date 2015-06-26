@@ -1,7 +1,7 @@
 Example ${jetty.base} with custom connectors
 ============================================
 
-This is a Jetty 9.2+ ${jetty.base} showing how to setup
+This is a Jetty 9.2+ `${jetty.base}` showing how to setup
 custom Connectors for a specific instance of Jetty.
 
 Looking at the `start.ini` you will see that there is
