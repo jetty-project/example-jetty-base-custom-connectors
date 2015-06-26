@@ -1,0 +1,120 @@
+<?xml version="1.0"?>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "http://www.eclipse.org/jetty/configure_9_3.dtd">
+
+<Configure id="Server" class="org.eclipse.jetty.server.Server">
+
+  <!-- Plain HTTP Connector -->
+  <New id="app2HttpConf" class="org.eclipse.jetty.server.HttpConfiguration">
+    <!-- reference default http config -->
+    <Arg><Ref refid="httpConfig" /></Arg>
+    <!-- only modify what the secure port should be -->
+    <Set name="securePort"><Property name="app2.ssl.port" default="9601" /></Set>
+  </New>
+
+  <Call name="addConnector">
+    <Arg>
+      <New id="app2Http" class="org.eclipse.jetty.server.ServerConnector">
+        <Arg name="server"><Ref refid="Server"/></Arg>
+        <Arg name="acceptors" type="int"><Property name="app2.acceptors" default="-1" /></Arg>
+        <Arg name="selectors" type="int"><Property name="app2.selectors" default="-1" /></Arg>
+        <Arg name="factories">
+          <Array type="org.eclipse.jetty.server.ConnectionFactory">
+            <Item>
+              <New class="org.eclipse.jetty.server.HttpConnectionFactory">
+                <Arg name="config">
+                  <Ref refid="app2HttpConf"/>
+                </Arg>
+              </New>
+            </Item>
+          </Array>
+        </Arg>
+        <Set name="port"><Property name="app2.http.port" default="9600"/></Set>
+        <Set name="idleTimeout"><Property name="app2.connector.idleTimeout" default="30000"/></Set>
+        <Set name="name"><Property name="app2.connector.name" default="conn-app2"/></Set>
+      </New>
+    </Arg>
+  </Call>
+
+  <!-- SSL Connector -->
+
+  <New id="app2SslConf" class="org.eclipse.jetty.server.HttpConfiguration">
+    <Arg><Ref refid="app2HttpConf" /></Arg>
+    <Call name="addCustomizer">
+      <Arg>
+        <New class="org.eclipse.jetty.server.SecureRequestCustomizer">
+          <Arg type="boolean"><Property name="jetty.ssl.sniHostCheck" default="true"/></Arg>
+        </New>
+      </Arg>
+    </Call>
+  </New>
+
+  <New id="app2SslContextFactory" class="org.eclipse.jetty.util.ssl.SslContextFactory">
+    <Set name="KeyStorePath"><Property name="jetty.base" default="." />/<Property name="app2.sslContext.keyStorePath" default="etc/keystore"/></Set>
+    <Set name="KeyStorePassword"><Property name="app2.sslContext.keyStorePassword" default="OBF:1vny1zlo1x8e1vnw1vn61x8g1zlu1vn4"/></Set>
+    <Set name="KeyStoreType"><Property name="app2.sslContext.keyStoreType" default="JKS"/></Set>
+    <Set name="KeyStoreProvider"><Property name="app2.sslContext.keyStoreProvider"/></Set>
+    <Set name="KeyManagerPassword"><Property name="app2.sslContext.keyManagerPassword" default="OBF:1u2u1wml1z7s1z7a1wnl1u2g"/></Set>
+    <Set name="TrustStorePath"><Property name="jetty.base" default="." />/<Property name="app2.sslContext.trustStorePath" default="etc/keystore"/></Set>
+    <Set name="TrustStorePassword"><Property name="app2.sslContext.trustStorePassword" default="OBF:1vny1zlo1x8e1vnw1vn61x8g1zlu1vn4"/></Set>
+    <Set name="TrustStoreType"><Property name="app2.sslContext.trustStoreType" default="JKS"/></Set>
+    <Set name="TrustStoreProvider"><Property name="app2.sslContext.trustStoreProvider"/></Set>
+    <Set name="EndpointIdentificationAlgorithm"></Set>
+    <Set name="NeedClientAuth"><Property name="app2.sslContext.needClientAuth" default="false"/></Set>
+    <Set name="WantClientAuth"><Property name="app2.sslContext.wantClientAuth" default="false"/></Set>
+    <Set name="ExcludeCipherSuites">
+      <Array type="String">
+        <Item>SSL_RSA_WITH_DES_CBC_SHA</Item>
+        <Item>SSL_DHE_RSA_WITH_DES_CBC_SHA</Item>
+        <Item>SSL_DHE_DSS_WITH_DES_CBC_SHA</Item>
+        <Item>SSL_RSA_EXPORT_WITH_RC4_40_MD5</Item>
+        <Item>SSL_RSA_EXPORT_WITH_DES40_CBC_SHA</Item>
+        <Item>SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA</Item>
+        <Item>SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA</Item>
+        <Item>.*RC4.*</Item>
+      </Array>
+    </Set>
+    <!-- alread excluded by default
+      -  see: https://github.com/eclipse/jetty.project/blob/jetty-9.3.0.v20150612/jetty-util/src/main/java/org/eclipse/jetty/util/ssl/SslContextFactory.java#L264
+      -->
+    <Set name="ExcludeProtocols">
+      <Array type="String">
+        <Item>SSL</Item>
+        <Item>SSLv2</Item>
+        <Item>SSLv2Hello</Item>
+        <Item>SSLv3</Item>
+      </Array>
+    </Set>
+    <Set name="useCipherSuitesOrder"><Property name="app2.sslContext.useCipherSuitesOrder" default="true"/></Set>
+  </New>
+
+  <Call name="addConnector">
+    <Arg>
+      <New id="app2Ssl" class="org.eclipse.jetty.server.ServerConnector">
+        <Arg name="server"><Ref refid="Server"/></Arg>
+        <Arg name="acceptors" type="int"><Property name="app2.acceptors" default="-1" /></Arg>
+        <Arg name="selectors" type="int"><Property name="app2.selectors" default="-1" /></Arg>
+        <Arg name="factories">
+          <Array type="org.eclipse.jetty.server.ConnectionFactory">
+            <Item>
+              <New class="org.eclipse.jetty.server.SslConnectionFactory">
+                <Arg name="next">http/1.1</Arg>
+                <Arg name="sslContextFactory"><Ref refid="app2SslContextFactory"/></Arg>
+              </New>
+            </Item>
+            <Item>
+              <New class="org.eclipse.jetty.server.HttpConnectionFactory">
+                <Arg name="config">
+                  <Ref refid="app2SslConf"/>
+                </Arg>
+              </New>
+            </Item>
+          </Array>
+        </Arg>
+        <Set name="port"><Property name="app2.ssl.port" default="9600"/></Set>
+        <Set name="idleTimeout"><Property name="app2.connector.idleTimeout" default="30000"/></Set>
+        <Set name="name"><Property name="app2.connector.name" default="conn-app2"/></Set>
+      </New>
+    </Arg>
+  </Call>
+
+</Configure>
